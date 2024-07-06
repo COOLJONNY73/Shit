@@ -1,0 +1,429 @@
+local main = Instance.new("ScreenGui")
+local top = Instance.new("Frame")
+local back = Instance.new("Frame")
+local ScrollingFrame = Instance.new("ScrollingFrame")
+local bald = Instance.new("TextButton")
+local ragdoll = Instance.new("TextButton")
+local kill = Instance.new("TextButton")
+local btools = Instance.new("TextButton")
+local naked = Instance.new("TextButton")
+local goto = Instance.new("TextButton")
+local rtools = Instance.new("TextButton")
+local sink = Instance.new("TextButton")
+local ban = Instance.new("TextButton")
+local explorer = Instance.new("TextButton")
+local slock = Instance.new("TextButton")
+local UIGridLayout = Instance.new("UIGridLayout")
+local kick = Instance.new("TextButton")
+local blockhead = Instance.new("TextButton")
+local stools = Instance.new("TextButton")
+local noface = Instance.new("TextButton")
+local punish = Instance.new("TextButton")
+local pantsless = Instance.new("TextButton")
+local shirtless = Instance.new("TextButton")
+local tshirtless = Instance.new("TextButton")
+local noregen = Instance.new("TextButton")
+local stopanim = Instance.new("TextButton")
+local blockchar = Instance.new("TextButton")
+local nolimbs = Instance.new("TextButton")
+local nola = Instance.new("TextButton")
+local noll = Instance.new("TextButton")
+local nora = Instance.new("TextButton")
+local norl = Instance.new("TextButton")
+local nowaist = Instance.new("TextButton")
+local noroot = Instance.new("TextButton")
+local top_2 = Instance.new("TextLabel")
+local credits = Instance.new("TextLabel")
+local queue = Instance.new("TextLabel")
+local target = Instance.new("TextBox")
+local Players = game:GetService("Players")
+function splitString(str,delim)
+	local broken = {}
+	if delim == nil then delim = "," end
+	for w in string.gmatch(str,"[^"..delim.."]+") do
+		table.insert(broken,w)
+	end
+	return broken
+end
+function toTokens(str)
+	local tokens = {}
+	for op,name in string.gmatch(str,"([+-])([^+-]+)") do
+		table.insert(tokens,{Operator = op,Name = name})
+	end
+	return tokens
+end
+function getRoot(char)
+	local rootPart = char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
+	return rootPart
+end
+local WTS = function(Object)
+	local ObjectVector = workspace.CurrentCamera:WorldToScreenPoint(Object.Position)
+	return Vector2.new(ObjectVector.X, ObjectVector.Y)
+end
+local mouse = Players.LocalPlayer:GetMouse()
+local MousePositionToVector2 = function()
+	return Vector2.new(mouse.X, mouse.Y)
+end
+local GetClosestPlayerFromCursor = function()
+	local found = nil
+	local ClosestDistance = math.huge
+	for i, v in pairs(Players:GetPlayers()) do
+		if v ~= Players.LocalPlayer and v.Character and v.Character:FindFirstChildOfClass("Humanoid") then
+			for k, x in pairs(v.Character:GetChildren()) do
+				if string.find(x.Name, "Torso") then
+					local Distance = (WTS(x) - MousePositionToVector2()).Magnitude
+					if Distance < ClosestDistance then
+						ClosestDistance = Distance
+						found = v
+					end
+				end
+			end
+		end
+	end
+	return found
+end
+local SpecialPlayerCases = {
+	["all"] = function(speaker) return Players:GetPlayers() end,
+	["others"] = function(speaker)
+		local plrs = {}
+		for i,v in pairs(Players:GetPlayers()) do
+			if v ~= speaker then
+				table.insert(plrs,v)
+			end
+		end
+		return plrs
+	end,
+	["All"] = function(speaker) return Players:GetPlayers() end,
+	["others"] = function(speaker)
+		local plrs = {}
+		for i,v in pairs(Players:GetPlayers()) do
+			if v ~= speaker then
+				table.insert(plrs,v)
+			end
+		end
+		return plrs
+	end,
+	["me"] = function(speaker)return {speaker} end,
+	["#(%d+)"] = function(speaker,args,currentList)
+		local returns = {}
+		local randAmount = tonumber(args[1])
+		local players = {unpack(currentList)}
+		for i = 1,randAmount do
+			if #players == 0 then break end
+			local randIndex = math.random(1,#players)
+			table.insert(returns,players[randIndex])
+			table.remove(players,randIndex)
+		end
+		return returns
+	end,
+	["random"] = function(speaker,args,currentList)
+		local players = Players:GetPlayers()
+		local localplayer = Players.LocalPlayer
+		table.remove(players, table.find(players, localplayer))
+		return {players[math.random(1,#players)]}
+	end,
+	["%%(.+)"] = function(speaker,args)
+		local returns = {}
+		local team = args[1]
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Team and string.sub(string.lower(plr.Team.Name),1,#team) == string.lower(team) then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["allies"] = function(speaker)
+		local returns = {}
+		local team = speaker.Team
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Team == team then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["enemies"] = function(speaker)
+		local returns = {}
+		local team = speaker.Team
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Team ~= team then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["team"] = function(speaker)
+		local returns = {}
+		local team = speaker.Team
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Team == team then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["nonteam"] = function(speaker)
+		local returns = {}
+		local team = speaker.Team
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Team ~= team then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["friends"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr:IsFriendsWith(speaker.UserId) and plr ~= speaker then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["nonfriends"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if not plr:IsFriendsWith(speaker.UserId) and plr ~= speaker then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["guests"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Guest then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["bacons"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Character:FindFirstChild('Pal Hair') or plr.Character:FindFirstChild('Kate Hair') then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["age(%d+)"] = function(speaker,args)
+		local returns = {}
+		local age = tonumber(args[1])
+		if not age == nil then return end
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.AccountAge <= age then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["nearest"] = function(speaker,args,currentList)
+		local speakerChar = speaker.Character
+		if not speakerChar or not getRoot(speakerChar) then return end
+		local lowest = math.huge
+		local NearestPlayer = nil
+		for _,plr in pairs(currentList) do
+			if plr ~= speaker and plr.Character then
+				local distance = plr:DistanceFromCharacter(getRoot(speakerChar).Position)
+				if distance < lowest then
+					lowest = distance
+					NearestPlayer = {plr}
+				end
+			end
+		end
+		return NearestPlayer
+	end,
+	["farthest"] = function(speaker,args,currentList)
+		local speakerChar = speaker.Character
+		if not speakerChar or not getRoot(speakerChar) then return end
+		local highest = 0
+		local Farthest = nil
+		for _,plr in pairs(currentList) do
+			if plr ~= speaker and plr.Character then
+				local distance = plr:DistanceFromCharacter(getRoot(speakerChar).Position)
+				if distance > highest then
+					highest = distance
+					Farthest = {plr}
+				end
+			end
+		end
+		return Farthest
+	end,
+	["group(%d+)"] = function(speaker,args)
+		local returns = {}
+		local groupID = tonumber(args[1])
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr:IsInGroup(groupID) then  
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["alive"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid") and plr.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["dead"] = function(speaker,args)
+		local returns = {}
+		for _,plr in pairs(Players:GetPlayers()) do
+			if (not plr.Character or not plr.Character:FindFirstChildOfClass("Humanoid")) or plr.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
+				table.insert(returns,plr)
+			end
+		end
+		return returns
+	end,
+	["rad(%d+)"] = function(speaker,args)
+		local returns = {}
+		local radius = tonumber(args[1])
+		local speakerChar = speaker.Character
+		if not speakerChar or not getRoot(speakerChar) then return end
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr.Character and getRoot(plr.Character) then
+				local magnitude = (getRoot(plr.Character).Position-getRoot(speakerChar).Position).magnitude
+				if magnitude <= radius then table.insert(returns,plr) end
+			end
+		end
+		return returns
+	end,
+	["cursor"] = function(speaker)
+		local plrs = {}
+		local v = GetClosestPlayerFromCursor()
+		if v ~= nil then table.insert(plrs, v) end
+		return plrs
+	end,
+}
+function onlyIncludeInTable(tab,matches)
+	local matchTable = {}
+	local resultTable = {}
+	for i,v in pairs(matches) do matchTable[v.Name] = true end
+	for i,v in pairs(tab) do if matchTable[v.Name] then table.insert(resultTable,v) end end
+	return resultTable
+end
+
+function removeTableMatches(tab,matches)
+	local matchTable = {}
+	local resultTable = {}
+	for i,v in pairs(matches) do matchTable[v.Name] = true end
+	for i,v in pairs(tab) do if not matchTable[v.Name] then table.insert(resultTable,v) end end
+	return resultTable
+end
+
+function getPlayersByName(Name)
+	local Name,Len,Found = string.lower(Name),#Name,{}
+	for _,v in pairs(Players:GetPlayers()) do
+		if Name:sub(0,1) == '@' then
+			if string.sub(string.lower(v.Name),1,Len-1) == Name:sub(2) then
+				table.insert(Found,v)
+			end
+		else
+			if string.sub(string.lower(v.Name),1,Len) == Name or string.sub(string.lower(v.DisplayName),1,Len) == Name then
+				table.insert(Found,v)
+			end
+		end
+	end
+	return Found
+end
+function getPlayer(list,speaker)
+	if list == nil then return {speaker.Name} end
+	local nameList = splitString(list,",")
+
+	local foundList = {}
+
+	for _,name in pairs(nameList) do
+		if string.sub(name,1,1) ~= "+" and string.sub(name,1,1) ~= "-" then name = "+"..name end
+		local tokens = toTokens(name)
+		local initialPlayers = Players:GetPlayers()
+
+		for i,v in pairs(tokens) do
+			if v.Operator == "+" then
+				local tokenContent = v.Name
+				local foundCase = false
+				for regex,case in pairs(SpecialPlayerCases) do
+					local matches = {string.match(tokenContent,"^"..regex.."$")}
+					if #matches > 0 then
+						foundCase = true
+						initialPlayers = onlyIncludeInTable(initialPlayers,case(speaker,matches,initialPlayers))
+					end
+				end
+				if not foundCase then
+					initialPlayers = onlyIncludeInTable(initialPlayers,getPlayersByName(tokenContent))
+				end
+			else
+				local tokenContent = v.Name
+				local foundCase = false
+				for regex,case in pairs(SpecialPlayerCases) do
+					local matches = {string.match(tokenContent,"^"..regex.."$")}
+					if #matches > 0 then
+						foundCase = true
+						initialPlayers = removeTableMatches(initialPlayers,case(speaker,matches,initialPlayers))
+					end
+				end
+				if not foundCase then
+					initialPlayers = removeTableMatches(initialPlayers,getPlayersByName(tokenContent))
+				end
+			end
+		end
+
+		for i,v in pairs(initialPlayers) do table.insert(foundList,v) end
+	end
+
+	local foundNames = {}
+	for i,v in pairs(foundList) do table.insert(foundNames,v.Name) end
+
+	return foundNames
+end
+function Destroy(instance)
+	spawn(function()
+		game:GetService("ReplicatedStorage").DeleteCar:FireServer(instance)
+	end)
+end
+
+main.Name = "main"
+main.Parent = game:GetService("CoreGui")
+
+top.Name = "top"
+top.Parent = main
+top.Active = true
+top.BackgroundColor3 = Color3.new(0.188235, 0.203922, 0.188235)
+top.BackgroundTransparency = 0.300
+top.BorderColor3 = Color3.new(0.188235, 0.203922, 0.188235)
+top.Draggable = true
+top.Position = UDim2.new(0.612145662, 102, 0.311965823, -29)
+top.Size = UDim2.new(0, 0, 0, 0)
+
+back.Name = "back"
+back.Parent = top
+back.BackgroundColor3 = Color3.new(0.188235, 0.203922, 0.188235)
+back.BackgroundTransparency = 0.300
+back.BorderColor3 = Color3.new(0.188235, 0.203922, 0.1882358)
+back.BorderSizePixel = 0
+back.Position = UDim2.new(-0.00343642617, 0, 1, 0)
+back.Size = UDim2.new(0, 0, 0, 0)
+
+
+
+
+
+
+target.Name = "target"
+target.Parent = top
+target.BackgroundColor3 = Color3.fromRGB(172, 172, 172)
+target.BackgroundTransparency = 0.400
+target.Position = UDim2.new(0.0206185561, 0, 8.86666584, 0)
+target.Size = UDim2.new(0, 0, 0, 0)
+target.Font = Enum.Font.SourceSans
+target.Text = ""
+target.TextColor3 = Color3.fromRGB(255, 255, 255)
+target.TextSize = 23.000
+local selectionbox = Instance.new("SelectionBox", workspace) local equipped = false local oldmouse = mouse.Icon local destroytool = Instance.new("Tool", Players.LocalPlayer:FindFirstChildOfClass("Backpack")) destroytool.RequiresHandle = false destroytool.Name = "Delete" destroytool.ToolTip = "TOPK3K 5.0" destroytool.TextureId = "http://www.roblox.com/asset/?id=12223874" destroytool.CanBeDropped = false destroytool.Equipped:connect(function() equipped = true mouse.Icon = "rbxasset://textures\\HammerCursor.png" while equipped do selectionbox.Adornee = mouse.Target wait() end end) destroytool.Unequipped:connect(function() equipped = false selectionbox.Adornee = nil mouse.Icon = oldmouse print(oldmouse) end) destroytool.Activated:connect(function() local explosion = Instance.new("Explosion", workspace) explosion.BlastPressure = 0 explosion.BlastRadius = 0 explosion.DestroyJointRadiusPercent = 0 explosion.ExplosionType = Enum.ExplosionType.NoCraters explosion.Position = mouse.Target.Position Destroy(mouse.Target) end) game:GetService("StarterGui"):SetCoreGuiEnabled('Backpack', true) Players.LocalPlayer.CharacterAdded:connect(function() local destroytool = Instance.new("Tool", Players.LocalPlayer:FindFirstChildOfClass("Backpack")) destroytool.RequiresHandle = false destroytool.Name = "Delete" destroytool.ToolTip = "from secret Service" destroytool.TextureId = "http://www.roblox.com/asset/?id=12223874" destroytool.CanBeDropped = false destroytool.Equipped:connect(function() equipped = true mouse.Icon = "rbxasset://textures\\HammerCursor.png" while equipped do selectionbox.Adornee = mouse.Target wait() end end) destroytool.Unequipped:connect(function() equipped = false selectionbox.Adornee = nil mouse.Icon = oldmouse print(oldmouse) end) destroytool.Activated:connect(function() local explosion = Instance.new("Explosion", workspace) explosion.BlastPressure = 0 explosion.BlastRadius = 0 explosion.DestroyJointRadiusPercent = 0 explosion.ExplosionType = Enum.ExplosionType.NoCraters explosion.Position = mouse.Target.Position Destroy(mouse.Target) end)
+
+
+	game:GetService("StarterGui"):SetCoreGuiEnabled('Backpack', true)
+end)
